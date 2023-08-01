@@ -46,20 +46,20 @@ In order to start using the tray app utility we need to set its window as the st
 
 Without any further actions, the application should not generate an empty tray app with a context menu containing default utility actions.
 
-![BFjcNzG8kp](https://github.com/Planktomas/TrayAppUtility/assets/94010480/f8b5986f-cd26-409c-ade9-002956dfe902)
+![BFjcNzG8kp](https://github.com/Planktomas/TrayAppUtility/assets/94010480/1b12476c-37bc-48c1-9169-a75c83d24b0f)
 
 #### Changing tray icon
 Using the tray app utility is quite simple. One of the first things we might want to do is set our custom icon. This can be done by adding a png image with the name "TrayIcon.png" to the project files.
 
-![devenv_1XKmYNLobO](https://github.com/Planktomas/TrayAppUtility/assets/94010480/10974db1-6472-40d5-9d0c-133984b0055d)
+![devenv_1XKmYNLobO](https://github.com/Planktomas/TrayAppUtility/assets/94010480/85371a29-36b9-4305-acb0-603bcef0bc37)
 
 Then you need to make the PNG file build action to be set to "Embedded resource".
 
-![devenv_6D8WrFX9iX](https://github.com/Planktomas/TrayAppUtility/assets/94010480/229d416c-5dbd-4b51-82fc-83e83e0fada6)
+![devenv_6D8WrFX9iX](https://github.com/Planktomas/TrayAppUtility/assets/94010480/f7439bf3-a86c-4a8b-a856-80a65af8c859)
 
 This will make your custom icon discoverable by tray app utility. Once the project is built, you should see tray app use your icon.
 
-![yYaggdnX8h](https://github.com/Planktomas/TrayAppUtility/assets/94010480/ef5ce74c-573d-4c39-bace-2b5ea3120ea8)
+![yYaggdnX8h](https://github.com/Planktomas/TrayAppUtility/assets/94010480/ac686bb0-3f0e-475c-822a-ffe4117aa07a)
 
 #### Defining an action
 In order to start adding your own actions to the tray app, declare a public static method. The name of the method will be used as the name of the action. Here is an example of the full method signature:
