@@ -62,9 +62,8 @@ namespace TrayAppUtility
                 if(Processed < 1)
                     return TimeSpan.Zero;
 
-                var elapsedRatio = (float)Processed / Total;
-                var etaRatio = 1 - elapsedRatio;
-                return m_Stopwatch.Elapsed * (etaRatio / elapsedRatio);
+                var etaRatio = 1 - Ratio;
+                return m_Stopwatch.Elapsed * (etaRatio / Ratio);
             }
         }
 

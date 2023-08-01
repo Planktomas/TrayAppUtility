@@ -61,7 +61,6 @@ namespace TrayAppUtility
 
     public class Log : IDisposable
     {
-
         readonly LogFile log;
         readonly Action<string>? onWrite;
 

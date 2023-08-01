@@ -209,8 +209,8 @@ namespace TrayAppUtility
             {
                 s_Tray.ToolTipText = $"{s_ActionName}\n" +
                     $"{Progress.Processed} / {Progress.Total} ({Math.Round(Progress.Ratio * 100)}%)\n" +
-                    $"{s_LastLog}\n" +
-                    $"ETA: {Progress.ETA:hh\\:mm\\:ss}";
+                    $"ETA: {Progress.ETA:hh\\:mm\\:ss}\n" +
+                    $"{s_LastLog}";
             }
 
             if(Progress.Total == 0 || Error)

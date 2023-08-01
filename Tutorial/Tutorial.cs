@@ -16,7 +16,7 @@ namespace Tutorial
             {
                 if (cancel.IsCancellationRequested)
                 {
-                    log.Write($"Aborting Custom Action");
+                    log.Write($"Cancelling Default Action");
                     return;
                 }
 
