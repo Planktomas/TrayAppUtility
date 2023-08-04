@@ -65,7 +65,7 @@ This will make your custom icon discoverable by tray app utility. Once the proje
 In order to start adding your own actions to the tray app, declare a public static method. The name of the method will be used as the name of the action. Here is an example of the full method signature:
 ```cs
 [TrayAction]
-public static void Action(Log log, CancellationTokenSource cancel)
+public static void Action(CancellationTokenSource cancel)
 {
 }
 ```
@@ -73,7 +73,7 @@ public static void Action(Log log, CancellationTokenSource cancel)
 Of course, there is no point in leaving an empty action so let's fill it with some work to do:
 ```cs
 [TrayAction]
-public static void Action(Log log, CancellationTokenSource cancel)
+public static void Action(CancellationTokenSource cancel)
 {
     var length = 100;
     Progress.Total = length;
@@ -82,13 +82,12 @@ public static void Action(Log log, CancellationTokenSource cancel)
     {
         if (cancel.IsCancellationRequested)
         {
-            log.Write($"Cancelling Default Action");
+            Log.Write($"Cancelling Default Action");
             return;
         }
 
-        log.Write($"Processing item {i}");
         Thread.Sleep(100);
-        Progress.Increment();
+        Progress.Increment($"Processed item {i}");
     }
 }
 ```
@@ -102,7 +101,7 @@ Default actions are created identically as tray actions. In fact, both attribute
 ```cs
 [TrayAction]
 [TrayDefault]
-public static void DefaultAction(Log log, CancellationTokenSource cancel)
+public static void DefaultAction(CancellationTokenSource cancel)
 {
 ...
 }
