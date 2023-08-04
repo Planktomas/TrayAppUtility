@@ -14,9 +14,14 @@ namespace TrayAppUtility
         readonly string m_LogPath;
         readonly System.Threading.Timer m_FlushTimer;
         readonly BlockingCollection<string> m_LogBuffer = new();
+        readonly Action<string>? m_OnWrite;
 
-        public LogFile(string logName)
+        internal static LogFile s_CurrentLog;
+
+        public LogFile(string logName, Action<string>? onWrite = null)
         {
+            m_OnWrite = onWrite;
+
             Directory.CreateDirectory(k_LogFolder);
             DeleteOldLogFiles(k_LogFolder, DateTime.Now.AddMonths(-1));
 
@@ -26,11 +31,14 @@ namespace TrayAppUtility
             m_FlushTimer = new System.Threading.Timer(Flush, null,
                 TimeSpan.FromSeconds(k_FlushInterval),
                 TimeSpan.FromSeconds(k_FlushInterval));
+
+            s_CurrentLog = this;
         }
 
         public void Write(string message)
         {
             m_LogBuffer.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+            m_OnWrite?.Invoke(message);
         }
 
         private void Flush(object? state = null)
@@ -59,27 +67,8 @@ namespace TrayAppUtility
         }
     }
 
-    public class Log : IDisposable
+    public static class Log
     {
-        readonly LogFile log;
-        readonly Action<string>? onWrite;
-
-        public Log(string logName, Action<string>? onWrite = null)
-        {
-            log = new LogFile(logName);
-            this.onWrite = onWrite;
-        }
-
-        public void Write(string message)
-        {
-            log.Write(message);
-            onWrite?.Invoke(message);
-        }
-
-        public void Dispose()
-        {
-            log.Dispose();
-            GC.SuppressFinalize(this);
-        }
+        public static void Write(string message) => LogFile.s_CurrentLog.Write(message);
     }
 }

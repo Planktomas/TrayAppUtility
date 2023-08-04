@@ -67,11 +67,14 @@ namespace TrayAppUtility
             }
         }
 
-        public static void Increment(int amount = 1)
+        public static void Increment(string? logMessage = null)
         {
             lock (m_LockObject)
             {
-                m_Processed = Math.Clamp(m_Processed + amount, 0, m_Total);
+                m_Processed = Math.Clamp(++m_Processed, 0, m_Total);
+
+                if (logMessage != null)
+                    Log.Write(logMessage);
             }
         }
     }

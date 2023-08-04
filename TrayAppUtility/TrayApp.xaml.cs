@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -123,18 +124,18 @@ namespace TrayAppUtility
                     s_ActiveTask = Task.Run(() =>
                     {
                         s_ActionName = NiceName(action.Name);
-                        using var log = new Log(action.Name, (message) => s_LastLog = message);
+                        using var log = new LogFile(action.Name, (message) => s_LastLog = message);
 
                         s_Tray.Dispatcher.Invoke(() => UpdateContextMenu());
 
                         try
                         {
-                            using var timer = new Timer(log);
+                            using var timer = new Timer();
                             s_Cancel = new CancellationTokenSource();
 
                             Error = false;
                             Progress.Total = 0;
-                            action.Invoke(null, new object[] { log, s_Cancel });
+                            action.Invoke(null, new object[] { s_Cancel });
                             Progress.Total = 0;
                         }
                         catch (Exception? ex)
@@ -289,7 +290,7 @@ namespace TrayAppUtility
                     if (stream != null)
                     {
                         var bitmap = new Bitmap(stream);
-                        var resizedBitmap = ResizeImage(bitmap, k_TrayIconSize, k_TrayIconSize);
+                        var resizedBitmap = MaskAndResizeImage(bitmap, k_TrayIconSize);
                         bitmaps.Add(resizedBitmap);
                     }
                 }
@@ -305,25 +306,31 @@ namespace TrayAppUtility
             }
         }
 
-        static Bitmap ResizeImage(Bitmap image, int width, int height)
+        static Bitmap MaskAndResizeImage(Bitmap image, int size)
         {
-            Bitmap resizedImage = new(width, height);
+            Bitmap resizedImage = new(size, size, PixelFormat.Format32bppArgb);
             using (Graphics graphics = Graphics.FromImage(resizedImage))
             {
-                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                graphics.DrawImage(image, 0, 0, width, height);
+                graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+                graphics.Clear(Color.Transparent);
+
+                using var path = new GraphicsPath();
+                path.AddEllipse(new RectangleF(0.5f, 0.5f, size - 1, size - 1));
+                graphics.SetClip(path);
+
+                graphics.DrawImage(image, 0, 0, size, size);
             }
             return resizedImage;
         }
 
         static string NiceName(string name)
+    {
+        StringBuilder result = new();
+        for (int i = 0; i < name.Length; i++)
         {
-            StringBuilder result = new();
-
-            for (int i = 0; i < name.Length; i++)
-            {
-                char currentChar = name[i];
-                result.Append(currentChar);
+            char currentChar = name[i];
+            result.Append(currentChar);
 
                 if (i + 1 < name.Length && char.IsLower(currentChar) && char.IsUpper(name[i + 1]))
                 {

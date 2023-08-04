@@ -7,7 +7,7 @@ namespace Tutorial
     {
         [TrayAction]
         [TrayDefault]
-        public static void DefaultAction(Log log, CancellationTokenSource cancel)
+        public static void DefaultAction(CancellationTokenSource cancel)
         {
             var length = 100;
             Progress.Total = length;
@@ -16,18 +16,17 @@ namespace Tutorial
             {
                 if (cancel.IsCancellationRequested)
                 {
-                    log.Write($"Cancelling Default Action");
+                    Log.Write($"Cancelling Default Action");
                     return;
                 }
 
-                log.Write($"Processing item {i}");
                 Thread.Sleep(100);
-                Progress.Increment();
+                Progress.Increment($"Processed item {i}");
             }
         }
 
         [TrayAction]
-        public static void FaultyAction(Log log, CancellationTokenSource cancel)
+        public static void FaultyAction(CancellationTokenSource cancel)
         {
             Progress.Total = 5;
             Progress.Processed = 3;
