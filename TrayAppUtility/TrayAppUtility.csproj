@@ -6,13 +6,13 @@
     <UseWPF>true</UseWPF>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Tray App Utility</Title>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>Tomas Kucinskas</Authors>
     <Description>Provides high-level APIs to create task executing tray applications</Description>
     <PackageProjectUrl>https://github.com/Planktomas/TrayAppUtility</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Planktomas/TrayAppUtility</RepositoryUrl>
-    <PackageTags>tray;app;application;utility;wpf;taskbar;task;taskmanagement;management;log;logging;execution;progress;progressbar;track;tracking;easy;module;modular</PackageTags>
+    <PackageTags>tray;app;application;utility;wpf;taskbar;task;taskmanagement;management;log;logging;execution;progress;progressbar;track;tracking;easy;module;modular;wpf</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
