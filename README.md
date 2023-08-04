@@ -1,5 +1,5 @@
 # TrayAppUtility
-Provides high-level APIs to create task-executing tray applications
+Provides high-level APIs to create task-executing tray applications in Window Presentation Foundation (WPF)
 
 ### Features
 - Progress API
@@ -34,7 +34,7 @@ Provides high-level APIs to create task-executing tray applications
 ### Tutorial
 
 #### Configuring tray app utility
-In order to start using the tray app utility we need to set its window as the startup window. We can do this in `App.xaml` file
+In order to start using the tray app utility we need create a new project from WPF application template and set its window as the startup window. We can do this in `App.xaml` file
 
 ```xaml
 <Application x:Class="Tutorial.App"
