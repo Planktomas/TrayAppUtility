@@ -252,7 +252,7 @@ namespace TrayAppUtility
 
         static IEnumerable<MethodInfo> FindActions()
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic);
             ConcurrentQueue<MethodInfo>? methodsWithAttribute = new ();
 
             Parallel.ForEach(assemblies, assembly =>
@@ -276,7 +276,7 @@ namespace TrayAppUtility
 
         static Bitmap LoadBitmapFromResource(string resourceName)
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic);
             var bitmaps = new ConcurrentBag<Bitmap>();
 
             Parallel.ForEach(assemblies, (assembly, state) =>
