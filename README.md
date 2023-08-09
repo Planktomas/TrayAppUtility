@@ -10,6 +10,13 @@ Provides high-level APIs to create task-executing tray applications in Window Pr
   - All tasks are automatically measured for time. Runtime is appended to the log file.
   - Log files older than a month are automatically deleted
   - Time-intensive action parts can be measured manually
+  - An attribute to disable logging for particular action
+- Action
+  - Declared as a public static method
+  - Ability to set tray action that will be used to populate tray icon context menu
+  - Ability to set default tray action that will be executed on double click if the tray is not in the error state
+  - Receives an instance of log writer
+  - Can be canceled at any time by the user
 - Tray
   - Custom tray icon
   - Context menu populated with users' actions
@@ -24,12 +31,9 @@ Provides high-level APIs to create task-executing tray applications in Window Pr
     - Progress bar overlay changes color to red
     - Double-clicking the tray icon opens the last log file and clears the error state
     - Any context menu action clears the error state and starts their respective action
-- Action
-  - Declared as a public static method
-  - Ability to set tray action that will be used to populate tray icon context menu
-  - Ability to set default tray action that will be executed on double click if the tray is not in the error state
-  - Receives an instance of log writer
-  - Can be canceled at any time by the user
+- Utilities
+    - Nice name method
+    - Open file or folder with default application (can wait for close)
 
 ### Tutorial
 
@@ -110,5 +114,19 @@ public static void DefaultAction(CancellationTokenSource cancel)
 Now tray app will execute this action upon double click.
 
 ![rYYocKeURP](https://github.com/Planktomas/TrayAppUtility/assets/94010480/12add970-f7b7-4591-885e-cafce8200d3a)
+
+#### No logging
+Some actions are so simple that they don't need logs. You can disable logging for a particular action using NoLog attribute:
+```cs
+[TrayAction]
+[TrayDefault]
+[NoLog]
+public static void DefaultAction(CancellationTokenSource cancel)
+{
+...
+}
+```
+
+You will still see log messages in tray tooltips but they won't be saved into a dedicated log file.
 
 [A complete tutorial app can be found here](https://github.com/Planktomas/TrayAppUtility/tree/main/Tutorial)
