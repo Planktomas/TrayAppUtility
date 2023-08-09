@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace TrayAppUtility
 {
@@ -14,14 +16,9 @@ namespace TrayAppUtility
         readonly string m_LogPath;
         readonly System.Threading.Timer m_FlushTimer;
         readonly BlockingCollection<string> m_LogBuffer = new();
-        readonly Action<string>? m_OnWrite;
 
-        internal static LogFile s_CurrentLog;
-
-        public LogFile(string logName, Action<string>? onWrite = null)
+        public LogFile(string logName)
         {
-            m_OnWrite = onWrite;
-
             Directory.CreateDirectory(k_LogFolder);
             DeleteOldLogFiles(k_LogFolder, DateTime.Now.AddMonths(-1));
 
@@ -31,14 +28,28 @@ namespace TrayAppUtility
             m_FlushTimer = new System.Threading.Timer(Flush, null,
                 TimeSpan.FromSeconds(k_FlushInterval),
                 TimeSpan.FromSeconds(k_FlushInterval));
-
-            s_CurrentLog = this;
         }
 
         public void Write(string message)
         {
             m_LogBuffer.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
-            m_OnWrite?.Invoke(message);
+        }
+
+        public string Write(Exception ex)
+        {
+            var messageBuffer = new StringBuilder();
+            while (ex != null)
+            {
+                messageBuffer.AppendLine($"{ex.Message}\n{ex.StackTrace}");
+                ex = ex.InnerException;
+            }
+
+            if (messageBuffer.Length == 0)
+                return null;
+
+            var message = messageBuffer.ToString();
+            m_LogBuffer.Add(message);
+            return message;
         }
 
         private void Flush(object? state = null)
@@ -69,6 +80,19 @@ namespace TrayAppUtility
 
     public static class Log
     {
-        public static void Write(string message) => LogFile.s_CurrentLog.Write(message);
+        internal static LogFile s_CurrentLog;
+        internal static Action<string>? s_OnWrite;
+
+        public static void Write(string message)
+        {
+            s_CurrentLog?.Write(message);
+            s_OnWrite?.Invoke(message);
+        }
+
+        public static void Write(Exception ex)
+        {
+            var message = s_CurrentLog?.Write(ex);
+            s_OnWrite?.Invoke(message);
+        }
     }
 }

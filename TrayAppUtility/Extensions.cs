@@ -1,6 +1,8 @@
 ﻿using System.Drawing;
 using System.Windows.Controls;
 using System.Windows;
+using System.Runtime.InteropServices;
+using System;
 
 namespace TrayAppUtility
 {
@@ -21,6 +23,17 @@ namespace TrayAppUtility
         public static void PerformClick(this MenuItem menuItem)
         {
             menuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent, menuItem));
+        }
+    }
+
+    public static class IconExtensions
+    {
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = CharSet.Auto)]
+        extern static bool DestroyIcon(IntPtr handle);
+
+        public static void DestroyHandle(this Icon icon)
+        {
+            DestroyIcon(icon.Handle);
         }
     }
 }

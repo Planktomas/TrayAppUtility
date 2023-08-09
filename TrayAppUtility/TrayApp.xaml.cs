@@ -9,6 +9,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,13 +53,15 @@ namespace TrayAppUtility
         static readonly IEnumerable<MethodInfo> s_Actions = FindActions();
         static readonly Bitmap s_CachedTrayIcon = LoadBitmapFromResource("TrayIcon.png");
 
-        static Bitmap TrayIcon => (Bitmap)s_CachedTrayIcon.Clone();
         static Color ProgressColor => Error ? k_ErrorColor : k_ProgressColor;
         static bool Error
         {
             get => s_Error;
             set
             {
+                if (s_Error == true && value == false)
+                    Progress.Total = 0;
+
                 s_Error = value;
                 s_IconUpdate.Start();
                 s_TooltipUpdate.Start();
@@ -71,6 +74,7 @@ namespace TrayAppUtility
             UpdateContextMenu();
 
             s_Tray.TrayMouseDoubleClick += DoubleClick;
+            Log.s_OnWrite = (message) => s_LastLog = message;
         }
 
         private void DoubleClick(object sender, RoutedEventArgs e)
@@ -83,18 +87,14 @@ namespace TrayAppUtility
 
         private void OnLogFolder(object? o, EventArgs? e)
         {
-            OpenFolderWithDefaultProgram(LogFile.k_LogFolder);
-
+            TrayUtils.Open(LogFile.k_LogFolder);
             Error = false;
-            Progress.Total = 0;
         }
 
         private void OnLastLog(object? o, EventArgs? e)
         {
-            OpenFileWithDefaultApplication(LogFile.s_LastLogFilePath);
-
+            TrayUtils.Open(LogFile.s_LastLogFilePath);
             Error = false;
-            Progress.Total = 0;
         }
 
         private void OnAbort(object? o, EventArgs? e)
@@ -115,7 +115,7 @@ namespace TrayAppUtility
             {
                 var item = new MenuItem()
                 {
-                    Header = NiceName(action.Name),
+                    Header = TrayUtils.NiceName(action.Name),
                     IsEnabled = s_ActiveTask?.Status != TaskStatus.Running
                 };
 
@@ -123,8 +123,14 @@ namespace TrayAppUtility
                 {
                     s_ActiveTask = Task.Run(() =>
                     {
-                        s_ActionName = NiceName(action.Name);
-                        using var log = new LogFile(action.Name, (message) => s_LastLog = message);
+                        s_ActionName = TrayUtils.NiceName(action.Name);
+
+                        LogFile? log = null;
+                        if(action.GetCustomAttribute<NoLogAttribute>() == null)
+                        {
+                            log = new LogFile(action.Name);
+                            Log.s_CurrentLog = log;
+                        }
 
                         s_Tray.Dispatcher.Invoke(() => UpdateContextMenu());
 
@@ -141,17 +147,12 @@ namespace TrayAppUtility
                         catch (Exception? ex)
                         {
                             Error = true;
-
-                            if(ex.InnerException != null)
-                            {
-                                ex = ex.InnerException;
-
-                                while (ex != null)
-                                {
-                                    log.Write($"{ex.Message}\n{ex.StackTrace}");
-                                    ex = ex.InnerException;
-                                }
-                            }
+                            Log.Write(ex.InnerException);
+                        }
+                        finally
+                        {
+                            log?.Dispose();
+                            Log.s_CurrentLog = null;
                         }
                     });
 
@@ -193,7 +194,7 @@ namespace TrayAppUtility
 
         static void UpdateTrayIcon(object? o, EventArgs e)
         {
-            var bitmap = TrayIcon;
+            using var bitmap = s_CachedTrayIcon.Clone() as Bitmap;
 
             if(Progress.Total > 0)
                 OverlayRadialProgressBar(bitmap, Progress.Ratio, ProgressColor);
@@ -201,6 +202,8 @@ namespace TrayAppUtility
             if(Progress.Total == 0 || Error)
                 s_IconUpdate.Stop();
 
+            s_Tray.Icon?.DestroyHandle();
+            s_Tray.Icon?.Dispose();
             s_Tray.Icon = System.Drawing.Icon.FromHandle(bitmap.GetHicon());
         }
 
@@ -289,7 +292,7 @@ namespace TrayAppUtility
                     using Stream? stream = assembly.GetManifestResourceStream(fullResourceName);
                     if (stream != null)
                     {
-                        var bitmap = new Bitmap(stream);
+                        using var bitmap = new Bitmap(stream);
                         var resizedBitmap = MaskAndResizeImage(bitmap, k_TrayIconSize);
                         bitmaps.Add(resizedBitmap);
                     }
@@ -298,6 +301,9 @@ namespace TrayAppUtility
 
             if (!bitmaps.IsEmpty)
             {
+                for (int i = 1; i < bitmaps.Count; i++)
+                    bitmaps.ElementAt(i).Dispose();
+
                 return bitmaps.First();
             }
             else
@@ -322,52 +328,6 @@ namespace TrayAppUtility
                 graphics.DrawImage(image, 0, 0, size, size);
             }
             return resizedImage;
-        }
-
-        static string NiceName(string name)
-    {
-        StringBuilder result = new();
-        for (int i = 0; i < name.Length; i++)
-        {
-            char currentChar = name[i];
-            result.Append(currentChar);
-
-                if (i + 1 < name.Length && char.IsLower(currentChar) && char.IsUpper(name[i + 1]))
-                {
-                    result.Append(' ');
-                }
-            }
-
-            return result.ToString();
-        }
-
-        static void OpenFileWithDefaultApplication(string? filePath)
-        {
-            if (!System.IO.File.Exists(filePath))
-            {
-                throw new ArgumentException("File does not exist.");
-            }
-
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = filePath,
-                UseShellExecute = true
-            });
-        }
-
-        static void OpenFolderWithDefaultProgram(string? folderPath)
-        {
-            if (!System.IO.Directory.Exists(folderPath))
-            {
-                throw new ArgumentException("Folder does not exist.");
-            }
-
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = folderPath,
-                UseShellExecute = true,
-                Verb = "open"
-            });
         }
     }
 }
