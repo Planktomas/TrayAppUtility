@@ -36,6 +36,7 @@ namespace TrayAppUtility
         static string? s_LastLog;
         static MenuItem? s_DefaultAction;
         static CancellationTokenSource s_Cancel = new();
+        static Mutex m_Mutex;
 
         internal static DispatcherTimer s_IconUpdate = new(
             TimeSpan.FromMilliseconds(100),
@@ -49,7 +50,7 @@ namespace TrayAppUtility
             UpdateTrayTooltip,
             Dispatcher.CurrentDispatcher);
 
-        static readonly TaskbarIcon s_Tray = new();
+        static readonly TaskbarIcon s_Tray = new() { Visibility = Visibility.Hidden};
         static readonly IEnumerable<MethodInfo> s_Actions = FindActions();
         static readonly Bitmap s_CachedTrayIcon = LoadBitmapFromResource("TrayIcon.png");
 
@@ -70,11 +71,29 @@ namespace TrayAppUtility
 
         public TrayApp()
         {
+            m_Mutex = new Mutex(true, AppDomain.CurrentDomain.FriendlyName, out var createdNew);
+
+            if (!createdNew)
+            {
+                MessageBox.Show($"Another instance of the '{AppDomain.CurrentDomain.FriendlyName}' application is already running.",
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Environment.Exit(0);
+            }
+
             InitializeComponent();
             UpdateContextMenu();
 
             s_Tray.TrayMouseDoubleClick += DoubleClick;
             Log.s_OnWrite = (message) => s_LastLog = message;
+            s_Tray.Visibility = Visibility.Visible;
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            m_Mutex.ReleaseMutex();
+            m_Mutex.Dispose();
+
+            base.OnClosed(e);
         }
 
         private void DoubleClick(object sender, RoutedEventArgs e)
