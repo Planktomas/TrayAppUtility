@@ -5,7 +5,6 @@ namespace Tutorial
 {
     public class TutorialApp
     {
-        [TrayAction]
         [TrayDefault]
         public static void DefaultAction(CancellationTokenSource cancel)
         {
@@ -31,6 +30,14 @@ namespace Tutorial
             Progress.Total = 5;
             Progress.Processed = 3;
             throw new System.Exception("Faulty action is throwing an exception");
+        }
+
+        [TrayAction]
+        [Autorun("00:00:30")]
+        public static void Notification(CancellationTokenSource cancel)
+        {
+            TrayUtils.ShowNotification("Notification", "Message text",
+                () => Log.Write("Log entry from notification"));
         }
     }
 }
