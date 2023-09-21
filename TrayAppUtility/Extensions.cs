@@ -22,6 +22,9 @@ namespace TrayAppUtility
     {
         public static void PerformClick(this MenuItem menuItem)
         {
+            if (!menuItem.IsEnabled)
+                return;
+
             menuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent, menuItem));
         }
     }
