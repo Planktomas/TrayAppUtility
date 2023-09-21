@@ -17,6 +17,7 @@ Provides high-level APIs to create task-executing tray applications in Window Pr
   - Ability to set default tray action that will be executed on double click if the tray is not in the error state
   - Receives an instance of log writer
   - Can be canceled at any time by the user
+  - Ability to periodically execute action automatically
 - Tray
   - Custom tray icon
   - Context menu populated with users' actions
@@ -34,6 +35,7 @@ Provides high-level APIs to create task-executing tray applications in Window Pr
 - Utilities
     - Nice name method
     - Open file or folder with default application (can wait for close)
+    - Method to show toast notifications with click action
 
 ### Tutorial
 
@@ -101,9 +103,8 @@ This is a fully implemented tray action. That's how it should look in action:
 ![oeZLAbwDB0](https://github.com/Planktomas/TrayAppUtility/assets/94010480/8fc88b2d-3910-4d0d-b910-1b43784cca55)
 
 #### Defining a default action
-Default actions are created identically as tray actions. In fact, both attributes can be used in accord. Here is an example of making a default action:
+Default actions are created identically as tray actions but using a different attribute. Here is an example of making a default action:
 ```cs
-[TrayAction]
 [TrayDefault]
 public static void DefaultAction(CancellationTokenSource cancel)
 {
@@ -128,5 +129,21 @@ public static void DefaultAction(CancellationTokenSource cancel)
 ```
 
 You will still see log messages in tray tooltips but they won't be saved into a dedicated log file.
+
+#### Automatic action execution
+We may want to execute actions automatically at a specified interval. This can be achieved using Autorun attribute. The attribute accepts a TimeSpan string in format Hours:Minutes:Seconds.Milliseconds. Here is how it looks in use:
+```cs
+[TrayAction]
+[Autorun("00:00:30")]
+public static void Notification(CancellationTokenSource cancel)
+{
+    TrayUtils.ShowNotification("Notification", "Message text",
+        () => Log.Write("Log entry from notification"));
+}
+```
+
+Now every 30 seconds you'll see this toast notification:
+
+![NAi1raRU7h](https://github.com/Planktomas/TrayAppUtility/assets/94010480/3202c028-3cca-4fdc-8e2b-7a1815ef9f9d)
 
 [A complete tutorial app can be found here](https://github.com/Planktomas/TrayAppUtility/tree/main/Tutorial)
