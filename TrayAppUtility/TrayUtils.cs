@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Hardcodet.Wpf.TaskbarNotification;
+using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Windows;
 
 namespace TrayAppUtility
 {
@@ -64,6 +63,25 @@ namespace TrayAppUtility
                 OpenFolder(path, wait);
             else
                 throw new ArgumentException("The path does not exist.");
+        }
+
+        public static void ShowNotification(string title, string message, Action onClick)
+        {
+            if(TrayApp.s_Tray == null)
+            {
+                throw new NullReferenceException("No tray app is running");
+            }
+
+            RoutedEventHandler? clickCallback = null;
+            clickCallback = (o, e) =>
+            {
+                onClick.Invoke();
+                TrayApp.s_Tray.TrayBalloonTipClicked -= clickCallback;
+            };
+
+            TrayApp.s_Tray.HideBalloonTip();
+            TrayApp.s_Tray.ShowBalloonTip(title, message, BalloonIcon.None);
+            TrayApp.s_Tray.TrayBalloonTipClicked += clickCallback;
         }
     }
 }

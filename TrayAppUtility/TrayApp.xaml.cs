@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using System.Xml.Linq;
 
 namespace TrayAppUtility
 {
@@ -36,7 +37,8 @@ namespace TrayAppUtility
         static string? s_LastLog;
         static MenuItem? s_DefaultAction;
         static CancellationTokenSource s_Cancel = new();
-        static Mutex m_Mutex;
+        static Mutex? m_Mutex;
+        static bool s_ToastNotificationInProgress;
 
         internal static DispatcherTimer s_IconUpdate = new(
             TimeSpan.FromMilliseconds(100),
@@ -50,7 +52,9 @@ namespace TrayAppUtility
             UpdateTrayTooltip,
             Dispatcher.CurrentDispatcher);
 
-        static readonly TaskbarIcon s_Tray = new() { Visibility = Visibility.Hidden};
+        internal static readonly TaskbarIcon s_Tray = new() { Visibility = Visibility.Hidden};
+        internal static DispatcherTimer? s_AutorunTimer;
+
         static readonly IEnumerable<MethodInfo> s_Actions = FindActions();
         static readonly Bitmap s_CachedTrayIcon = LoadBitmapFromResource("TrayIcon.png");
 
@@ -84,6 +88,9 @@ namespace TrayAppUtility
             UpdateContextMenu();
 
             s_Tray.TrayMouseDoubleClick += DoubleClick;
+            s_Tray.TrayBalloonTipShown += (o, e) => s_ToastNotificationInProgress = true;
+            s_Tray.TrayBalloonTipClosed += (o, e) => s_ToastNotificationInProgress = false;
+            s_Tray.TrayBalloonTipClicked += (o, e) => s_ToastNotificationInProgress = false;
             Log.s_OnWrite = (message) => s_LastLog = message;
             s_Tray.Visibility = Visibility.Visible;
         }
@@ -161,6 +168,12 @@ namespace TrayAppUtility
                             Error = false;
                             Progress.Total = 0;
                             action.Invoke(null, new object[] { s_Cancel });
+
+                            while(s_ToastNotificationInProgress)
+                            {
+                                Thread.Sleep(50);
+                            }
+
                             Progress.Total = 0;
                         }
                         catch (Exception? ex)
@@ -277,6 +290,8 @@ namespace TrayAppUtility
             var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic);
             ConcurrentQueue<MethodInfo>? methodsWithAttribute = new ();
 
+            MethodInfo? autorunMethod = null;
+
             Parallel.ForEach(assemblies, assembly =>
             {
                 var types = assembly.GetTypes();
@@ -287,11 +302,34 @@ namespace TrayAppUtility
 
                     foreach (var method in methods)
                     {
-                        if (method.IsDefined(typeof(TrayActionAttribute)))
+                        if (method.IsDefined(typeof(TrayActionAttribute))
+                        || method.IsDefined(typeof(TrayDefaultAttribute)))
+                        {
                             methodsWithAttribute.Enqueue(method);
+
+                            if (method.IsDefined(typeof(AutorunAttribute)))
+                            {
+                                autorunMethod = method;
+                            }
+                        }
                     }
                 }
             });
+
+            if(autorunMethod != null)
+            {
+                var autorunAttribute = autorunMethod.GetCustomAttribute<AutorunAttribute>();
+                var timespan = TimeSpan.Parse(autorunAttribute.TimeSpanString);
+                var actionName = TrayUtils.NiceName(autorunMethod.Name);
+                s_AutorunTimer = new(timespan, DispatcherPriority.Background,
+                    (o, e) =>
+                    {
+                        var menuItem = FindMenuItemByName(s_Tray?.ContextMenu, actionName);
+                        menuItem?.PerformClick();
+                    },
+                    s_Tray.Dispatcher);
+                s_AutorunTimer.Start();
+            }
 
             return methodsWithAttribute;
         }
@@ -347,6 +385,28 @@ namespace TrayAppUtility
                 graphics.DrawImage(image, 0, 0, size, size);
             }
             return resizedImage;
+        }
+
+        static MenuItem? FindMenuItemByName(ItemsControl itemsControl, string name)
+        {
+            foreach (var item in itemsControl.Items)
+            {
+                if (item is MenuItem menuItem)
+                {
+                    if (((string)menuItem.Header).Equals(name))
+                    {
+                        return menuItem;
+                    }
+
+                    var subMenuItem = FindMenuItemByName(menuItem, name);
+                    if (subMenuItem != null)
+                    {
+                        return subMenuItem;
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }
