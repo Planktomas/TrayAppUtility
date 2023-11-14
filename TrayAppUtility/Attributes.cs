@@ -14,9 +14,9 @@ namespace TrayAppUtility
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class AutorunAttribute : Attribute 
     {
-        public string TimeSpanString { get; }
+        public string? TimeSpanString { get; }
 
-        public AutorunAttribute(string timeSpanString)
+        public AutorunAttribute(string? timeSpanString = null)
         {
             TimeSpanString = timeSpanString;
         }

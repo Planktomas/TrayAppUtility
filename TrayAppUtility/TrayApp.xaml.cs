@@ -54,6 +54,7 @@ namespace TrayAppUtility
 
         internal static readonly TaskbarIcon s_Tray = new() { Visibility = Visibility.Hidden};
         internal static DispatcherTimer? s_AutorunTimer;
+        internal static Action? s_AutorunCallback;
 
         static readonly IEnumerable<MethodInfo> s_Actions = FindActions();
         static readonly Bitmap s_CachedTrayIcon = LoadBitmapFromResource("TrayIcon.png");
@@ -93,6 +94,8 @@ namespace TrayAppUtility
             s_Tray.TrayBalloonTipClicked += (o, e) => s_ToastNotificationInProgress = false;
             Log.s_OnWrite = (message) => s_LastLog = message;
             s_Tray.Visibility = Visibility.Visible;
+
+            s_AutorunCallback?.Invoke();
         }
 
         protected override void OnClosed(EventArgs e)
@@ -319,16 +322,19 @@ namespace TrayAppUtility
             if(autorunMethod != null)
             {
                 var autorunAttribute = autorunMethod.GetCustomAttribute<AutorunAttribute>();
-                var timespan = TimeSpan.Parse(autorunAttribute.TimeSpanString);
                 var actionName = TrayUtils.NiceName(autorunMethod.Name);
-                s_AutorunTimer = new(timespan, DispatcherPriority.Background,
-                    (o, e) =>
-                    {
-                        var menuItem = FindMenuItemByName(s_Tray?.ContextMenu, actionName);
-                        menuItem?.PerformClick();
-                    },
-                    s_Tray.Dispatcher);
-                s_AutorunTimer.Start();
+                s_AutorunCallback = () =>
+                {
+                    var menuItem = FindMenuItemByName(s_Tray?.ContextMenu, actionName);
+                    menuItem?.PerformClick();
+                };
+                if(TimeSpan.TryParse(autorunAttribute.TimeSpanString, out var timespan))
+                {
+                    s_AutorunTimer = new(timespan, DispatcherPriority.Background,
+                        (o, e) => s_AutorunCallback?.Invoke(),
+                        s_Tray.Dispatcher);
+                    s_AutorunTimer.Start();
+                }
             }
 
             return methodsWithAttribute;
