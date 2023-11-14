@@ -83,5 +83,10 @@ namespace TrayAppUtility
             TrayApp.s_Tray.ShowBalloonTip(title, message, BalloonIcon.None);
             TrayApp.s_Tray.TrayBalloonTipClicked += clickCallback;
         }
+
+        public static void ScheduleAction(string name)
+        {
+            TrayApp.s_ScheduledAction = NiceName(name);
+        }
     }
 }

@@ -55,6 +55,7 @@ namespace TrayAppUtility
         internal static readonly TaskbarIcon s_Tray = new() { Visibility = Visibility.Hidden};
         internal static DispatcherTimer? s_AutorunTimer;
         internal static Action? s_AutorunCallback;
+        internal static string? s_ScheduledAction;
 
         static readonly IEnumerable<MethodInfo> s_Actions = FindActions();
         static readonly Bitmap s_CachedTrayIcon = LoadBitmapFromResource("TrayIcon.png");
@@ -193,6 +194,13 @@ namespace TrayAppUtility
 
                     await s_ActiveTask;
                     UpdateContextMenu();
+
+                    if(s_ScheduledAction != null)
+                    {
+                        var menuItem = FindMenuItemByName(s_Tray?.ContextMenu, s_ScheduledAction);
+                        menuItem?.PerformClick();
+                        s_ScheduledAction = null;
+                    }
                 };
 
                 if (action.IsDefined(typeof(TrayDefaultAttribute)))
