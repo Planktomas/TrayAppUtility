@@ -36,6 +36,7 @@ Provides high-level APIs to create task-executing tray applications in Window Pr
     - Nice name method
     - Open file or folder with default application (can wait for close)
     - Method to show toast notifications with click action
+    - Method to schedule a task to run after currently running task is finished
 
 ### Tutorial
 
@@ -142,7 +143,7 @@ public static void Notification(CancellationTokenSource cancel)
 }
 ```
 
-Now every 30 seconds you'll see this toast notification:
+Now on startup and then every 30 seconds you'll see this toast notification:
 
 ![NAi1raRU7h](https://github.com/Planktomas/TrayAppUtility/assets/94010480/3202c028-3cca-4fdc-8e2b-7a1815ef9f9d)
 
